@@ -17,7 +17,7 @@ We recommend using `s3cmd`, a command-line tool available directly on LUMI, to p
 
 First, load the module that contains `s3cmd` on LUMI:
 
-```sh
+```bash
 module load lumio
 ```
 
@@ -25,7 +25,7 @@ module load lumio
 
 Run the configuration wizard to link the tool with your AWS account:
 
-```sh
+```bash
 s3cmd --configure
 ```
 
@@ -48,7 +48,7 @@ You will be presented with a series of prompts. Answer them as follows:
 
 You can now synchronise a directory from LUMI's Lustre filesystem to your newly created S3 bucket. 
 
-```sh
+```bash
 s3cmd sync LOCAL_DIR s3://BUCKET_NAME[/PREFIX] 
 ```
 
