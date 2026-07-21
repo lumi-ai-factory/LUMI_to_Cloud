@@ -2,6 +2,13 @@
 @source "../src";
 @import "tw-animate-css";
 @import "katex/dist/katex.min.css";
+/* Self-hosted fonts (no request to Google, works offline). */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
 /* Syntax highlighting palette is defined below using only LUMI brand colours
    (no github.css import — that theme ships greens, reds, and oranges that
    are not part of the LUMI AIF palette). */
@@ -643,11 +650,6 @@ pre.with-line-numbers .code-line::before {
   line-height: 1;
 }
 
-.terminal-btn-close {
-  background: transparent;
-  color: #ffffff;
-}
-
 /* Brighten hljs tokens inside terminal blocks so they read on the dark bg
    regardless of theme. */
 .terminal-block .hljs {
@@ -724,11 +726,6 @@ pre.with-line-numbers .code-line::before {
   line-height: 1;
 }
 
-.nano-btn-close {
-  background: transparent;
-  color: #ffffff;
-}
-
 /* hljs token colors tuned for the dark nano body */
 .nano-block .hljs,
 .nano-block .hljs-keyword,
@@ -755,6 +752,61 @@ pre.with-line-numbers .code-line::before {
 .nano-block .hljs-variable,
 .nano-block .hljs-params {
   color: oklch(0.82 0.08 290) !important;
+}
+
+/* ============= Mermaid diagrams ============= */
+/* Same surface and border tokens as regular code blocks, so all boxes on a
+   page share one colour. */
+.mermaid-block {
+  display: flex;
+  justify-content: center;
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius-lg);
+  background: var(--code-bg);
+  overflow-x: auto;
+}
+
+.mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mermaid inlines its own theme colour behind arrow labels; forcing it to
+   the box token here guarantees labels always blend into the box, whatever
+   hex mermaid was initialized with. */
+.mermaid-block .edgeLabel,
+.mermaid-block .edgeLabel p,
+.mermaid-block .labelBkg {
+  background-color: var(--code-bg) !important;
+}
+
+.mermaid-block rect.labelBkg {
+  fill: var(--code-bg) !important;
+}
+
+/* Pre-hydration fallback: the diagram source, dimmed, until mermaid loads. */
+.mermaid-loading pre {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-muted-foreground);
+  opacity: 0.7;
+}
+
+.mermaid-error {
+  border-color: color-mix(in oklab, var(--lumi-magenta) 40%, transparent);
+}
+
+.mermaid-error > p:first-child {
+  background: color-mix(in oklab, var(--lumi-magenta) 10%, var(--color-card));
+  border-color: color-mix(in oklab, var(--lumi-magenta) 40%, transparent);
+  color: var(--lumi-magenta);
+}
+
+.mermaid-error > p:last-child {
+  border-color: var(--color-border);
+  color: var(--color-muted-foreground);
 }
 
 /* ---------- Quiz blocks ---------- */

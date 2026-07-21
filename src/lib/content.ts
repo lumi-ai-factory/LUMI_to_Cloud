@@ -21,6 +21,8 @@ export interface PageFrontmatter {
   title: string;
   nav_order?: number;
   parent?: string;
+  /** Accepted for Just the Docs-style front matter, but not required — nesting
+   * is driven entirely by the children's `parent` fields. */
   has_children?: boolean;
   /** Optional meta description. When omitted, one is derived from the body. */
   description?: string;
@@ -60,6 +62,47 @@ export const pages: Page[] = Object.entries(rawModules)
     };
   })
   .sort((a, b) => (a.frontmatter.nav_order ?? 999) - (b.frontmatter.nav_order ?? 999));
+
+/**
+ * Warn about front-matter mistakes that the nav would otherwise swallow
+ * silently: pages are linked to their parent by exact title, so a typo in
+ * `parent` or a duplicated title rearranges the sidebar with no error. Runs
+ * once on load, so warnings show up in the browser console during
+ * `bun run dev` and in the CI build log when the site is prerendered.
+ */
+function warnAboutContentMistakes(all: Page[]) {
+  const byTitle = new Map<string, Page>();
+  for (const page of all) {
+    const title = page.frontmatter.title;
+    if (!title) {
+      console.warn(`[content] ${page.path}: missing "title" in front matter.`);
+      continue;
+    }
+    const other = byTitle.get(title);
+    if (other) {
+      console.warn(
+        `[content] ${page.path} and ${other.path} share the title "${title}". Titles must be unique: they are how "parent" fields and breadcrumbs identify pages.`,
+      );
+    } else {
+      byTitle.set(title, page);
+    }
+  }
+  for (const page of all) {
+    const parent = page.frontmatter.parent;
+    if (!parent) continue;
+    if (parent === page.frontmatter.title) {
+      console.warn(
+        `[content] ${page.path}: "parent" points at the page itself and is ignored.`,
+      );
+    } else if (!byTitle.has(parent)) {
+      console.warn(
+        `[content] ${page.path}: parent "${parent}" does not match any page title, so the page shows at the top level of the sidebar. Check it against the target page's "title".`,
+      );
+    }
+  }
+}
+
+warnAboutContentMistakes(pages);
 
 export function findPage(slug: string): Page | undefined {
   return pages.find((p) => p.slug === slug);
@@ -117,7 +160,10 @@ export function getPageDescription(page: Page, maxLen = 155): string {
     .replace(/\*([^*]+)\*/g, "$1")
     .replace(/__([^_]+)__/g, "$1")
     .replace(/_([^_]+)_/g, "$1")
-    .replace(/%/g, "") // glossary markers
+    // Glossary markers: a "%" directly after a letter ends a `Term%` marker.
+    // Percentages ("40%") follow digits, so they survive. `\%` escapes to "%".
+    .replace(/(?<=\p{L})%/gu, "")
+    .replace(/\\%/g, "%")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -186,13 +232,31 @@ export function buildNavTree(): NavNode[] {
   const roots: NavNode[] = [];
 
   for (const page of pages) {
+    // The glossary is a reference appendix, not part of the reading flow: it
+    // gets a pinned link in the sidebar footer instead of a nav entry, and is
+    // skipped by prev/next navigation (which flattens this tree).
+    if (page.slug === "glossary") continue;
     const node: NavNode = { page, children: [] };
     byTitle.set(page.frontmatter.title, node);
   }
 
+  // True when linking `node` under `parentTitle` would make the node its own
+  // ancestor (self-parent or a longer `parent` loop) — that node becomes a
+  // root instead, since a cycle would recurse forever when the tree is walked.
+  const wouldCycle = (node: NavNode, parentTitle: string): boolean => {
+    const seen = new Set<string>();
+    let title: string | undefined = parentTitle;
+    while (title !== undefined && !seen.has(title)) {
+      if (title === node.page.frontmatter.title) return true;
+      seen.add(title);
+      title = byTitle.get(title)?.page.frontmatter.parent;
+    }
+    return false;
+  };
+
   for (const node of byTitle.values()) {
     const parentTitle = node.page.frontmatter.parent;
-    if (parentTitle && byTitle.has(parentTitle)) {
+    if (parentTitle && byTitle.has(parentTitle) && !wouldCycle(node, parentTitle)) {
       byTitle.get(parentTitle)!.children.push(node);
     } else {
       roots.push(node);
