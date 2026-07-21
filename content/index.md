@@ -5,6 +5,9 @@ nav_order: 1
 
 # Migrating your AI workloads from LUMI to the Cloud
 
+> [!warning]
+> **Work in Progress**
+> This guide is currently under active development. Some sections (especially Azure and Finnish Cloud) may be incomplete.
 If you are an industry user looking to move your AI workloads (such as fine-tuned Large Language Models) from LUMI to a production-ready cloud environment, this guide provides the necessary steps.
 
 LUMI is designed for research and development, but it is not intended for hosting production services. Cloud providers offer scalable infrastructure tailored for deploying models in production.
