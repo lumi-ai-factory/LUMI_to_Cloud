@@ -11,7 +11,7 @@ nav_order: 1
 
 If you are an industry user looking to move your AI workloads (such as fine-tuned Large Language Models) from LUMI to a production-ready cloud environment, this guide provides the necessary steps.
 
-Once you have trained or fine-tuned a model on LUMI, you will often want to **host** it somewhere it can answer requests — as an API that your application, colleagues, or users can send questions to. LUMI is designed for research and development; for hosting a running service, you move to a cloud provider.
+Once you have trained or fine-tuned a model on LUMI, you will often want to **host** it somewhere it can answer requests, as an API that your application, colleagues, or users can send questions to. LUMI is designed for research and development; for hosting a running service, you move to a cloud provider.
 
 These materials walk you through doing that on several platforms. The provider-specific pages differ in the details, but the overall journey is the same everywhere: get your model weights into the provider's storage, rent a GPU-backed machine or managed service, load the model, and call it as an API. 
 
@@ -24,11 +24,11 @@ Regardless of provider, hosting a fine-tuned LLM comes down to four moves:
 1. **Move your weights** off LUMI and into the provider's storage.
 2. **Get a GPU machine or managed hosting service** big enough to hold the model.
 3. **Load the model** into a serving program that turns it into an API.
-4. **Send requests** to it — and **switch it off** when you are done.
+4. **Send requests** to it, and **switch it off** when you are done.
 
 ## Cost: the one thing to internalise first
 
-GPU compute is expensive and is billed **by the hour, for every hour it is switched on** — not by how much you actually use it, just like LUMI. This is true on every cloud. A machine large enough to host a big model can cost several to well over ten euros per hour, so a machine left running over a weekend by accident is the most common way people get an unpleasant bill. Build the habit of **shutting a model down as soon as you finish using it**, and only turning it back on when you need it. Each provider page shows exactly how to switch things off for that platform.
+GPU compute is expensive and is billed **by the hour, for every hour it is switched on**, not by how much you actually use it, just like LUMI. This is true on every cloud. A machine large enough to host a big model can cost several to well over ten euros per hour, so a machine left running over a weekend by accident is the most common way people get an unpleasant bill. Build the habit of **shutting a model down as soon as you finish using it**, and only turning it back on when you need it. Each provider page shows exactly how to switch things off for that platform.
 
 ## Preparing your weights (any platform)
 

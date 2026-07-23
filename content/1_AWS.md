@@ -5,7 +5,7 @@ nav_order: 2
 
 # Amazon Web Services (AWS)
 
-This section covers hosting your fine-tuned model on AWS. There are a few different ways to do it, and this page covers the setup that is the **same regardless of which you choose** — permissions, moving your weights, GPU quotas, choosing a machine size, and cost. Read this page once, then follow the page for your chosen hosting method.
+This section covers hosting your fine-tuned model on AWS. There are a few different ways to do it, and this page covers the setup that is the **same regardless of which you choose**: permissions, moving your weights, GPU quotas, choosing a machine size, and cost. Read this page once, then follow the page for your chosen hosting method.
 
 ## Prerequisites
 
@@ -16,18 +16,18 @@ Before starting the migration, ensure you have the following ready:
 
 ## 1. Ways to host on AWS
 
-- **[EC2](1.2_EC2.md)** — you rent a virtual machine with GPUs and run the model server yourself. Most control, most manual work. This is most similar to doing things on LUMI.
-- **[SageMaker AI](1.3_SageMaker-AI.md)** — AWS runs the machine and the server for you; you just describe what you want. A good middle ground, and the recommended starting point.
-- **Bedrock** — a fully managed service where you don't manage any machine at all.
+- **[EC2](1.2_EC2.md)**: you rent a virtual machine with GPUs and run the model server yourself. Most control, most manual work. This is most similar to doing things on LUMI.
+- **[SageMaker AI](1.3_SageMaker-AI.md)**: AWS runs the machine and the server for you; you just describe what you want. A good middle ground, and the recommended starting point.
+- **Bedrock**: a fully managed service where you don't manage any machine at all.
 
 ## 2. Permissions (IAM)
 
 This is the part that most often trips people up, so it is worth understanding clearly. **IAM** (Identity and Access Management) is how AWS decides who is allowed to do what. Two ideas matter here:
 
-- A **user** is you — a human logging into the Console. Your admin user (or the person who set up the account) can change permissions.
+- A **user** is you, a human logging into the Console. Your admin user (or the person who set up the account) can change permissions.
 - A **role** is an identity that a *machine* or *service* takes on. Your EC2 instance runs as a role; your SageMaker endpoint runs as a role. The role needs permission to read your weights from S3.
 
-The single most important rule: **a machine's role cannot grant itself permissions.** You always edit permissions as a human administrator in the IAM Console, never from inside the running machine or notebook. If a notebook or instance tries to change its own role, AWS refuses with an "Access Denied / not authorized" error. That is a safety feature, not a mistake — trying to work around it from the machine is the wrong path.
+The single most important rule: **a machine's role cannot grant itself permissions.** You always edit permissions as a human administrator in the IAM Console, never from inside the running machine or notebook. If a notebook or instance tries to change its own role, AWS refuses with an "Access Denied / not authorized" error. That is a safety feature, not a mistake. Trying to work around it from the machine is the wrong path.
 
 ### Giving your role access to your S3 bucket
 
@@ -80,7 +80,7 @@ To see what instances are available and their specifications:
 A brand-new AWS account usually has a limit of **zero** for GPU machines, so your very first deployment can fail with a "ResourceLimitExceeded" error before anything even starts. To raise it:
 
 1. In the Console, open **Service Quotas → AWS services → Amazon SageMaker** (or **Amazon EC2** if you are using EC2).
-2. Search for the exact instance type you plan to use — for SageMaker the quota is named like *"ml.g6e.12xlarge for endpoint usage"*.
+2. Search for the exact instance type you plan to use: for SageMaker the quota is named like *"ml.g6e.12xlarge for endpoint usage"*.
 3. Click **Request increase at account level** and ask for at least 1.
 
 Small requests (e.g., for 1 instance with a small number of GPUs) are usually automatically accepted within an hour or two. However, large requests can take days and may require opening a support ticket. EC2 and SageMaker have **separate** quotas even for the same GPU type, and each instance size is its own quota.
@@ -93,7 +93,7 @@ However, AWS actually bills EC2 and SageMaker instances **per second**. You are 
 To estimate the cost of running different instance types, use the [AWS Pricing Calculator](https://calculator.aws/). Remember that you are billed continuously while the instance is running/InService, regardless of whether you are actively sending requests to it or if traffic is zero.
 
 > [!NOTE] SageMaker Markup vs. EC2
-> When making your hosting choice, note that SageMaker's managed layer adds a markup. A SageMaker `ml.` instance typically costs 20–40% more than the exact same raw EC2 instance. You pay this premium because SageMaker handles the heavy lifting: it automatically provisions the machine, installs the necessary GPU drivers and serving software, downloads your weights from S3, and wraps it all into a ready-to-use API. With EC2, you rent a blank machine and have to do all of that setup manually.
+> When making your hosting choice, note that SageMaker's managed layer adds a markup. A SageMaker `ml.` instance typically costs 20 to 40% more than the exact same raw EC2 instance. You pay this premium because SageMaker handles the heavy lifting: it automatically provisions the machine, installs the necessary GPU drivers and serving software, downloads your weights from S3, and wraps it all into a ready-to-use API. With EC2, you rent a blank machine and have to do all of that setup manually.
 
 ## 6. Logs
 

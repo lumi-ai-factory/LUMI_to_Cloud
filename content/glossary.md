@@ -23,3 +23,5 @@ Here are key terms used throughout the Quick Guide.
 | **s3cmd** | A command-line tool for interacting with Amazon S3 and other S3-compatible cloud storage services. |
 | **EC2** | AWS's foundational compute service that provides virtual servers (instances). It gives you raw, operating-system-level access (Infrastructure as a Service), meaning you must configure the environment and manage the software stack yourself. |
 | **SageMaker** | A fully managed machine learning service by AWS that enables developers and data scientists to build, train, and deploy machine learning models. |
+| **Console** | A cloud provider's web-based dashboard, where you sign in to create and manage resources from your browser. |
+| **rclone** | A versatile command-line program for transferring and syncing files across many cloud storage providers, including AWS S3. Available on LUMI through the `lumio` module. |
