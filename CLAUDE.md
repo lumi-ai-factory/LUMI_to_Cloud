@@ -158,6 +158,11 @@ a copy button).
 > Body text of the callout.
 ```
 
+Keep callouts **short** (a few lines at most): a callout is for a single sharp
+warning, tip, note, or command, not for prose that belongs in the body. Never
+place **two callouts back to back**; if two would end up adjacent, merge them or
+move one into the surrounding prose.
+
 **Glossary links:** put a trailing `%` on a term to give it a hover-over
 definition pulled from `content/glossary.md`. The `%` is stripped from the output.
 
