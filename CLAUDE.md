@@ -79,8 +79,6 @@ another author's stub with generic filler; fill it in only when asked.
 
 - **No AI tells.** No emojis. **No em dashes (—) or en dashes (–)** anywhere.
   Rewrite with commas, colons, parentheses, or two sentences. This is strict.
-  Existing AWS/SageMaker/index pages still contain em dashes; there is a pending
-  cleanup pass to remove them (see TODOs).
 - **British spelling everywhere** (e.g. "synchronise", "optimise", "licence").
 - **Not dry, but tight.** Concise and genuinely interesting to read. Respect the
   reader's time: teach as much as they need and no more. Repetition is fine when
@@ -191,8 +189,6 @@ than assert from memory, and flag anything I could not confirm.
 
 ## Open items / TODOs
 
-- Remove all em/en dashes from existing content (`index.md`, `1_AWS.md`,
-  `1.3_SageMaker-AI.md` have the most).
 - **4th provider is undecided** (UpCloud vs a CSC offering vs other). Keep
   `4_*` pages generic and treat the specific provider as TBD until chosen.
 - Build out the stubs: GCP/Azure/Finnish intros, EC2, Azure and Finnish data

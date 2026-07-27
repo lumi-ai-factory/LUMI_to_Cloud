@@ -5,7 +5,7 @@ nav_order: 2
 
 # Amazon Web Services (AWS)
 
-This section covers hosting your fine-tuned model on AWS. We outline the different hosting services available and how they differ, along with the **core concepts and requirements that are the same regardless of which you choose**: permissions, GPU quotas, choosing a machine size, and cost. Read this page once to understand the landscape, upload your files to S3, and then follow the page for your chosen hosting method.
+This section covers hosting your fine-tuned model on AWS. We outline the different hosting services available and how they differ, along with the **core concepts and requirements that are the same regardless of which you choose**: permissions, GPU quotas, choosing a machine size, and cost. Read this page once to understand the landscape, [upload your files to S3](1.1_Move_data.md), and then follow the page for your chosen hosting method.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ Before starting the migration, ensure you have the following ready:
 
 - **[EC2](1.2_EC2.md)**: you rent a virtual machine with GPUs and run the model server yourself. Most control, most manual work. This is most similar to doing things on LUMI.
 - **[SageMaker AI](1.3_SageMaker-AI.md)**: AWS provisions the machine and runs the server for you; you just select the machine type and container, and it provides an API endpoint. More expensive than EC2 on the same hardware.
-- **Bedrock**: a fully managed service where you don't manage any machine at all. It charges per-token and is mostly used for AWS's pre-trained foundation models. While it is possible to host your own fine-tuned weights using Custom Model Import or Provisioned Throughput, doing so requires expensive multi-month commitments.
+- **Bedrock**: a fully managed service where you don't manage any machine at all. It charges per-token and is mostly used for AWS's pre-trained foundation models. You can host your own fine-tuned weights through Custom Model Import, but you are then billed for each active model copy at rates well above renting the equivalent GPU yourself, so it is rarely worth it for a self-hosted model.
 
 ## 2. Permissions (IAM)
 
@@ -64,8 +64,8 @@ Because SageMaker is built on top of EC2, both services use the exact same under
 Here is a summary of the primary GPU instance families available:
 
 - **`p5en`** (H200 GPUs): In Stockholm, these are only available as massive 8-GPU nodes (`p5en.48xlarge`), making them suited only for the largest enterprise models.
-- **`p4d`** (A100 GPUs): Like the `p5`, these are massive 8-GPU nodes that are very expensive and notoriously difficult to get quotas for.
-- **`g7e`** (RTX 6000 Ada GPUs): The newest generation, offering 96GB VRAM per card.
+- **`p4d`** (A100 GPUs): Like the `p5en`, these are massive 8-GPU nodes that are very expensive and notoriously difficult to get quotas for.
+- **`g7e`** (RTX PRO 6000 Blackwell GPUs): The newest generation, offering 96GB VRAM per card. At the time of writing, this instance type is not yet available in `eu-north-1`.
 - **`g6e`** (L40S GPUs): Offers 48GB VRAM per card.
 - **`g6`** (L4 GPUs): Offers 24GB VRAM per card.
 - **`g5`** (A10G GPUs): Offers 24GB VRAM per card. Older generation than `g6` but still viable if `g6` is unavailable.
@@ -76,18 +76,20 @@ Here is a summary of the primary GPU instance families available:
 
 A brand-new AWS account usually has a limit of **zero** for GPU machines, so if you try to deploy immediately, you may encounter a "ResourceLimitExceeded" error. To prevent this, you should raise your quota first:
 
-1. In the Console, open **Service Quotas → AWS services → Amazon EC2** or **Amazon SageMaker**.
-2. Search for the quota based on the service you will use:
-   - For **SageMaker**, search for the instance type and ensure you select the one for **endpoint usage** (e.g., *"ml.g6e.12xlarge for endpoint usage"*). The `ml.` prefix indicates it is a managed SageMaker instance.
-   - For **EC2**, search for *"Running On-Demand G and VT instances"* (for `g7e`/`g6`) or *"Running On-Demand P instances"* (for `p5`/`p4`).
-3. Click **Request increase at account level** and ask for at least 1.
+1. In the Console, open **Service Quotas > AWS services** and search for the service you will use: open **Amazon Elastic Compute Cloud (Amazon EC2)** or **Amazon SageMaker**.
+2. Search for the relevant quota:
+   - For **EC2**, search for *"All G and VT Spot Instance Requests"* (for the G family: `g5`/`g6`/`g6e`/`g7e`) or *"Running On-Demand P instances"* (for the P family: `p4d`/`p5en`).
+   - For **SageMaker**, search for the instance type and ensure you select the one for **endpoint usage** (e.g., *"ml.g6e.12xlarge for endpoint usage"*). The `ml.` prefix indicates it is a managed SageMaker instance. The [SageMaker notebook](1.3_SageMaker-AI.md) uses **`ml.g6e.12xlarge`** (or **`ml.g5.12xlarge`** as a backup), so we recommend requesting quota for both.
+3. Click **Request increase at account level**. 
+   - **Important for EC2:** EC2 quotas are measured in **vCPUs**, not instances. A `12xlarge` instance has 48 vCPUs, so you must request a quota of at least 48. 
+   - **Important for SageMaker:** SageMaker quotas are measured in **instances**, so you only need to request a quota of 1.
 
-Small requests (e.g., for 1 instance with a small number of GPUs) are usually automatically accepted within an hour or two. However, large requests can take longer. EC2 and SageMaker have **separate** quotas even for the same GPU type.
+Small requests (e.g., for a small number of instances) are usually automatically accepted within an hour or two. However, large requests can take longer. EC2 and SageMaker have **separate** quotas even for the same GPU type.
 
 ## 5. Cost
 
 GPU compute is expensive and the rates are quoted **by the hour**.
-However, AWS actually bills EC2 and SageMaker instances **per second**. You are only billed for the time the instance is actively running. This means if you test a model and turn it off after exactly 15 minutes, you will only be charged for 15 minutes. 
+However, AWS actually bills EC2 and SageMaker instances **per second** (with a 60-second minimum). You are only billed for the time the instance is actively running. This means if you test a model and turn it off after exactly 15 minutes, you will only be charged for 15 minutes. 
 
 To estimate the cost of running different instance types, use the [AWS Pricing Calculator](https://calculator.aws/). Remember that you are billed continuously while the instance is running/InService, regardless of whether you are actively sending requests to it or if traffic is zero.
 
