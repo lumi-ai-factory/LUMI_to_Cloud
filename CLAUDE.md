@@ -37,7 +37,7 @@ same everywhere and framed as four moves:
 1. Move the weights off LUMI into the provider's storage.
 2. Get a GPU machine or managed hosting service big enough for the model.
 3. Load the model into a serving program that exposes it as an API.
-4. Send requests, and switch it off when done.
+4. Send requests from your own application, and switch it off when done.
 
 **Out of scope (do not add unless asked):** training/retraining in the cloud,
 data pipelines, MLOps/monitoring, non-LLM workloads. Keep the guide narrow.
@@ -61,8 +61,8 @@ data pipelines, MLOps/monitoring, non-LLM workloads. Keep the guide narrow.
 |---|---|---|
 | `content/index.md` | Level 1 intro + provider chooser | Fairly complete |
 | `content/1_AWS.md` | AWS intro (IAM, sizing, quotas, cost) | Fairly complete |
-| `content/1.1_Move_data.md` | Move data to AWS (`s3cmd`) | Complete; `rclone` section TODO |
-| `content/1.2_EC2.md` | Host on EC2 | Stub ("Instructions by Lukas") |
+| `content/1.1_Move_data.md` | Move data to AWS (`rclone`, `s3cmd` alternative) | Complete |
+| `content/1.2_EC2.md` | Host on EC2 | Stub (by Lukas); sends readers to SageMaker meanwhile |
 | `content/1.3_SageMaker-AI.md` | Host on SageMaker | Complete |
 | `content/2_GCP.md` | GCP intro | Stub |
 | `content/2.1_Move_data.md` | Move data to GCP (`gcloud`) | Complete |
@@ -192,7 +192,43 @@ than assert from memory, and flag anything I could not confirm.
 - **4th provider is undecided** (UpCloud vs a CSC offering vs other). Keep
   `4_*` pages generic and treat the specific provider as TBD until chosen.
 - Build out the stubs: GCP/Azure/Finnish intros, EC2, Azure and Finnish data
-  moves, and the `rclone` alternative in `1.1_Move_data.md`.
+  moves.
+- **Calling the model from your own application.** This is the gap between what
+  the guide promises (a production inference API) and where it currently stops (a
+  model you can invoke from a notebook). A SageMaker endpoint has no public URL
+  and no API key: requests must be signed with SigV4 through an AWS SDK, and the
+  60-second cap on a single non-streaming request applies. Needs a section
+  covering credentials for the calling application, the SDK call from outside the
+  console, when you need a public HTTPS front door (Lambda plus API Gateway on
+  AWS) and when you do not, and how to live with the 60-second limit (stream, or
+  keep answers short). The question repeats on every provider, so the shared part
+  may belong in `index.md` and the specifics on each hosting page.
+- **Tested and settled in July 2026, do not re-flag these:** the notebook's
+  container URI works in `eu-north-1` with no `InferenceAmiVersion` on the
+  ProductionVariant; a SageMaker endpoint is **not** billed while its status is
+  `Creating`; a wrong `model_data_s3` path fails fast, so no preflight check is
+  needed; and an endpoint deleted by the cleanup cell is gone from
+  `list_endpoints` immediately rather than lingering as `Deleting`.
+- **The pinned vLLM container will age.** The notebook uses
+  `763104351884.dkr.ecr.<region>.amazonaws.com/vllm:0.19.0-gpu-py312-cu129-ubuntu22.04-sagemaker`,
+  while the AWS Deep Learning Containers vLLM line is already around 0.25.x, and
+  DLC account IDs and tags are region-specific. Revisit the pin when it stops
+  resolving, and see the next item.
+- **Document how to find serving containers.** Readers need to be able to look up
+  the current image URI themselves (the DLC available-images list for AWS, and
+  the equivalent elsewhere) rather than trusting a pinned tag that will age.
+- **Unify the notebook's two test payloads.** The non-streaming call sends
+  `content` as a string; the streaming one sends a list of content parts and adds
+  `stop: ["<|im_end|>", "\nuser", "\nassistant"]`. Make them the same shape, and
+  drop the stop list: vLLM applies the chat template's own stop tokens, and the
+  `"\nuser"` strings are base-model leftovers that can truncate valid output.
+- **LoRA and other adapter fine-tunes.** Decide what a reader holding an adapter
+  rather than merged weights should do, then document it in one place. The
+  options are merging into the base model on LUMI before uploading (simplest, and
+  keeps the "one clean folder" rule true) or uploading base plus adapter and
+  having the serving program apply it (`--enable-lora` in vLLM, which lets one
+  machine serve several adapters on one base). Either way, steer readers away
+  from having the endpoint pull base weights from Hugging Face at start-up.
 
 ## Dev commands
 

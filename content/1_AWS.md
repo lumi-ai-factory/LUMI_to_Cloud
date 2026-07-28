@@ -20,6 +20,16 @@ Before starting the migration, ensure you have the following ready:
 - **[SageMaker AI](1.3_SageMaker-AI.md)**: AWS provisions the machine and runs the server for you; you just select the machine type and container, and it provides an API endpoint. More expensive than EC2 on the same hardware.
 - **Bedrock**: a fully managed service where you don't manage any machine at all. It charges per-token and is mostly used for AWS's pre-trained foundation models. You can host your own fine-tuned weights through Custom Model Import, but you are then billed for each active model copy at rates well above renting the equivalent GPU yourself, so it is rarely worth it for a self-hosted model.
 
+### What it takes to turn either one into an API
+
+**EC2: A traditional web API.** When you deploy on EC2 using vLLM, it listens on a port. Your application calls it with an API key you set, and any OpenAI-compatible client library works. However, because you are running a public server, you are entirely responsible for securing the connection with HTTPS certificates, configuring firewall rules, and restarting the server if it crashes.
+
+**SageMaker AI: A private, secure endpoint.** SageMaker does not provide a public IP address or rely on simple API keys. Instead, every request must be cryptographically signed using your AWS credentials via an AWS SDK. AWS handles encryption automatically and restarts the model if it fails. If you want to expose your model to third parties or use standard OpenAI clients, you must build a lightweight proxy server to sit in front of SageMaker. This proxy holds your AWS credentials, validates incoming API keys, and forwards the prompts to SageMaker.
+
+**Which should you choose?**
+- Choose **EC2** if you explicitly need a direct, public-facing API, or if minimising hourly infrastructure costs outweighs the convenience of a managed service.
+- Choose **SageMaker** if your own application backend is the only consumer of the model and you prefer a fully managed service over handling server maintenance and security.
+
 ## 2. Permissions (IAM)
 
 Before an AWS service or virtual machine can access your model weights, it must be explicitly granted permission to do so, and getting this wrong is the most common reason a first deployment fails. You configure this as an administrator in the **AWS Console** (AWS's website where you sign in and manage things).
@@ -31,7 +41,7 @@ Before an AWS service or virtual machine can access your model weights, it must 
 - A **user** is you, a human logging into the Console. Your admin user (or the person who set up the account) can change permissions.
 - A **role** is an identity that a *machine* or *service* takes on. Your EC2 instance runs as a role; your SageMaker endpoint runs as a role. The role needs permission to read your weights from S3.
 
-The single most important rule: **a machine's role cannot grant itself permissions.** You always edit permissions as a human administrator in the IAM Console, never from inside the running machine or notebook. If a notebook or instance tries to change its own role, AWS refuses with an "Access Denied / not authorized" error.
+The single most important rule: **a machine's role cannot grant itself permissions.** You always edit permissions as a human administrator in the IAM Console, never from inside the running machine or notebook. If a notebook or instance tries to change its own role, AWS refuses with an "Access Denied / not authorised" error.
 
 ### Your role needs read access to your S3 bucket
 
@@ -65,7 +75,7 @@ Here is a summary of the primary GPU instance families available:
 
 - **`p5en`** (H200 GPUs): In Stockholm, these are only available as massive 8-GPU nodes (`p5en.48xlarge`), making them suited only for the largest enterprise models.
 - **`p4d`** (A100 GPUs): Like the `p5en`, these are massive 8-GPU nodes that are very expensive and notoriously difficult to get quotas for.
-- **`g7e`** (RTX PRO 6000 Blackwell GPUs): The newest generation, offering 96GB VRAM per card. At the time of writing, this instance type is not yet available in `eu-north-1`.
+- **`g7e`** (RTX PRO 6000 Blackwell GPUs): The newest generation, offering 96GB VRAM per card, enough to hold a 32B model on a single GPU. AWS announced Stockholm availability in July 2026, but SageMaker refused the `ml.g7e` types there when we tried, so check whether your service actually offers it before planning around it. A family usually reaches EC2 well before SageMaker.
 - **`g6e`** (L40S GPUs): Offers 48GB VRAM per card.
 - **`g6`** (L4 GPUs): Offers 24GB VRAM per card.
 - **`g5`** (A10G GPUs): Offers 24GB VRAM per card. Older generation than `g6` but still viable if `g6` is unavailable.
@@ -78,7 +88,7 @@ A brand-new AWS account usually has a limit of **zero** for GPU machines, so if 
 
 1. In the Console, open **Service Quotas > AWS services** and search for the service you will use: open **Amazon Elastic Compute Cloud (Amazon EC2)** or **Amazon SageMaker**.
 2. Search for the relevant quota:
-   - For **EC2**, search for *"All G and VT Spot Instance Requests"* (for the G family: `g5`/`g6`/`g6e`/`g7e`) or *"Running On-Demand P instances"* (for the P family: `p4d`/`p5en`).
+   - For **EC2**, search for *"Running On-Demand G and VT instances"* (for the G family: `g5`/`g6`/`g6e`/`g7e`) or *"Running On-Demand P instances"* (for the P family: `p4d`/`p5en`).
    - For **SageMaker**, search for the instance type and ensure you select the one for **endpoint usage** (e.g., *"ml.g6e.12xlarge for endpoint usage"*). The `ml.` prefix indicates it is a managed SageMaker instance. The [SageMaker notebook](1.3_SageMaker-AI.md) uses **`ml.g6e.12xlarge`** (or **`ml.g5.12xlarge`** as a backup), so we recommend requesting quota for both.
 3. Click **Request increase at account level**. 
    - **Important for EC2:** EC2 quotas are measured in **vCPUs**, not instances. A `12xlarge` instance has 48 vCPUs, so you must request a quota of at least 48. 
