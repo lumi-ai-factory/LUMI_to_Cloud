@@ -34,7 +34,7 @@ Before starting the migration, ensure you have the following ready:
 
 Before an AWS service or virtual machine can access your model weights, it must be explicitly granted permission to do so, and getting this wrong is the most common reason a first deployment fails. You configure this as an administrator in the **AWS Console** (AWS's website where you sign in and manage things).
 
-![AWS Console](/assets/AWS_Console.png)
+![AWS Console](./assets/AWS_Console.png)
 
 **IAM** (Identity and Access Management) is the part of the Console that decides who is allowed to do what. Two kinds of identity matter here:
 
@@ -64,7 +64,7 @@ Because SageMaker is built on top of EC2, both services use the exact same under
 3. To filter for GPU machines, click the search bar ("Find instance types by attributes"), select **GPUs**, choose **>=**, and enter **1**.
 4. Click on any instance name to see its hardware details.
 
-![EC2 Instance Types](/assets/EC2_Instance_types_Stockholm.png)
+![EC2 Instance Types](./assets/EC2_Instance_types_Stockholm.png)
 
 > [!NOTE] Note for SageMaker users
 > A SageMaker instance is just an EC2 instance with an `ml.` prefix added to its name. For example, if you find that the `g6e.xlarge` EC2 instance has the hardware you want, the SageMaker equivalent is exactly the same hardware under the name `ml.g6e.xlarge`.
